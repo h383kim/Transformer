@@ -25,19 +25,15 @@ class TransformerEmbedding(nn.Module):
             padding_idx: Index for padding token, ensuring its embedding remains zero.
         """
         self.token_embedding = nn.Embedding(vocab_size, d_model, padding_idx=1)
-        """
-        Positional encoding layer adds positional information to token embeddings.
-        """
+        """ Positional encoding layer adds positional information to token embeddings. """
         self.positional_encoding = PositionalEncoding(d_model, max_len)
-        """
-        Dropout
-        """
+        """ Dropout """
         self.emb_dropout = nn.Dropout(p=p_dropout)
 
     def forward(self, x):
         """
         Args:
-            x (Tensor): Input tensor of token indices with shape (batch_size, seq_len).
+            x (Tensor): Input tensor of tokens with shape (batch_size, seq_len).
         Returns:
             Tensor: Output tensor of embeddings with shape (batch_size, seq_len, d_model).
         """
