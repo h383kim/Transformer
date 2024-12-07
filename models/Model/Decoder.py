@@ -37,24 +37,24 @@ class DecoderBlock(nn.Module):
         self.dropout3 = nn.Dropout(p=p_dropout)
         self.norm3 = nn.LayerNorm(d_model)
         
-    def forward(self, x, enc_out, src_mask, target_mask):
+    def forward(self, x, enc_out, self_attn_mask, cross_attn_mask):
         """
         Args:
             x (torch.Tensor): Target sequence tensor of shape (batch_size, tgt_seq_len, d_model).
             enc_out (torch.Tensor): Encoder output tensor of shape (batch_size, src_seq_len, d_model).
-            src_mask (torch.Tensor): Source mask of shape (batch_size, 1, src_seq_len, src_seq_len).
-            target_mask (torch.Tensor): Target mask of shape (batch_size, 1, tgt_seq_len, tgt_seq_len).
+            self_attn_mask (torch.Tensor): Source mask of shape (batch_size, 1, src_seq_len, src_seq_len).
+            cross_attn_mask (torch.Tensor): Target mask of shape (batch_size, 1, tgt_seq_len, tgt_seq_len).
         Returns:
             torch.Tensor: Transformed output tensor of shape (batch_size, tgt_seq_len, d_model).
             torch.Tensor: Self-attention scores for the target sequence.
             torch.Tensor: Cross-attention scores for the encoder-decoder interaction.
         """
         # Self-Attention with residual connection and normalization
-        attn_context, attn_score = self.self_attention(x, x, x, mask=src_mask)
+        attn_context, attn_score = self.self_attention(x, x, x, mask=self_attn_mask)
         attn_context = self.dropout1(attn_context)
         x = self.norm1(x + attn_context)
         # Cross-Attention with residual connection and normalization
-        cross_attn_context, cross_attn_score = self.cross_attention(x, enc_out, enc_out, mask=target_mask)
+        cross_attn_context, cross_attn_score = self.cross_attention(x, enc_out, enc_out, mask=cross_attn_mask)
         cross_attn_context = self.dropout2(cross_attn_context)
         x = self.norm2(x + cross_attn_context)
         # Feed-forward network with residual connection and normalization
@@ -93,13 +93,13 @@ class Decoder(nn.Module):
         # Last FC Layer
         self.fc_out = nn.Linear(d_model, dec_vocab_size)
         
-    def forward(self, trg, enc_out, src_mask, target_mask, save_attn_pattern):
+    def forward(self, trg, enc_out, self_attn_mask, cross_attn_mask, save_attn_pattern=False):
         """
         Args:
             trg (torch.Tensor): Target sequence tensor of shape (batch_size, tgt_seq_len).
             enc_out (torch.Tensor): Encoder output tensor of shape (batch_size, src_seq_len, d_model).
-            src_mask (torch.Tensor): Source mask to prevent attention to specific positions.
-            target_mask (torch.Tensor): Target mask to enforce causal masking (no attention to future positions).
+            self_attn_mask (torch.Tensor): Source mask to prevent attention to specific positions.
+            cross_attn_mask (torch.Tensor): Target mask to enforce causal masking (no attention to future positions).
             save_attn_pattern (bool): If True, saves and returns attention patterns for visualization.
         Returns:
             torch.Tensor: Output logits of shape (batch_size, tgt_seq_len, dec_vocab_size).
@@ -112,7 +112,7 @@ class Decoder(nn.Module):
         self_attn_patterns = torch.tensor([]).to(DEVICE)
         cross_attn_patterns = torch.tensor([]).to(DEVICE)
         for block in self.dec_blocks:
-            x, self_attn_score, cross_attn_score = block(x, enc_out, src_mask, target_mask)
+            x, self_attn_score, cross_attn_score = block(x, enc_out, self_attn_mask, cross_attn_mask)
             # (Optional) if save_attn_pattern is True, save these and return for visualization/investigation
             if save_attn_pattern:
                 self_attn_patterns = torch.cat([self_attn_patterns, self_attn_pattern[0].unsqueeze(0)], dim=0)
