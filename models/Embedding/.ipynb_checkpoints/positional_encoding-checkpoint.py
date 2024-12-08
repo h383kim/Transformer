@@ -41,7 +41,7 @@ class PositionalEncoding(nn.Module):
             Tensor: Output tensor of shape (batch_size, seq_len, d_model) with positional encodings added.
         """
         # Ensure the positional encoding is on the same device as the input
-        pe = self.pe[:, x.size(1), :].to(x.device)
+        pe = self.pe[:, :x.size(1), :].to(x.device)
         # Add positional encoding to the input embeddings
         x = x + pe
         return x
