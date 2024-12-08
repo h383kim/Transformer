@@ -1,0 +1,13 @@
+# Transformer
+
+📂 models/
+├── 📂 Embedding/
+│   ├── 📄 positional_encoding.py
+│   └── 📄 embedding.py
+├── 📂 Layers/
+│   ├── 📄 multi_head_attention.py
+│   └── 📄 feed_forward_network.py
+├── 📂 Model/
+│   ├── 📄 Encoder.py
+│   ├── 📄 Decoder.py
+│   └── 📄 Transformer.py
