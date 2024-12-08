@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 
-class FFN(nn.module):
+class FFN(nn.Module):
     """
     A Position-wise feed-forward transformation to embeddings.
     Args:

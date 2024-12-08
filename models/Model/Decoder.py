@@ -115,8 +115,8 @@ class Decoder(nn.Module):
             x, self_attn_score, cross_attn_score = block(x, enc_out, self_attn_mask, cross_attn_mask)
             # (Optional) if save_attn_pattern is True, save these and return for visualization/investigation
             if save_attn_pattern:
-                self_attn_patterns = torch.cat([self_attn_patterns, self_attn_pattern[0].unsqueeze(0)], dim=0)
-                cross_attn_patterns = torch.cat([cross_attn_patterns, cross_attn_pattern[0].unsqueeze(0)], dim=0)
+                self_attn_patterns = torch.cat([self_attn_patterns, self_attn_score[0].unsqueeze(0)], dim=0)
+                cross_attn_patterns = torch.cat([cross_attn_patterns, cross_attn_score[0].unsqueeze(0)], dim=0)
 
         x = self.fc_out(x)
 

@@ -43,7 +43,7 @@ class EncoderBlock(nn.Module):
         """
         # Self-attention and Skip_connect
         attn_context, attn_score = self.self_attention(x, x, x, mask=src_mask)
-        attn_context = nn.dropout1(attn_context)
+        attn_context = self.dropout1(attn_context)
         x = self.norm1(x + attn_context)
         # Feed_forward and Skip-connect
         residual = self.ffn(x)
@@ -73,7 +73,7 @@ class Encoder(nn.Module):
         self.input_emb = TransformerEmbedding(vocab_size, d_model, max_len, p_dropout)
         self.dropout = nn.Dropout(p=p_dropout)
         # Create encoder blocks
-        self.enc_blocks = nn.ModuleList([EncoderBlock(d_moel, d_ffn, num_heads, p_dropout)
+        self.enc_blocks = nn.ModuleList([EncoderBlock(d_model, d_ffn, num_heads, p_dropout)
                                          for _ in range(num_blocks)])
         
     

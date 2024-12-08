@@ -38,6 +38,6 @@ class TransformerEmbedding(nn.Module):
             Tensor: Output tensor of embeddings with shape (batch_size, seq_len, d_model).
         """
         token_embedded = self.token_embedding(x)
-        positon_encoded = self.postional_encoding(token_embedded)
+        position_encoded = self.positional_encoding(token_embedded)
         
         return self.emb_dropout(position_encoded)

@@ -21,7 +21,8 @@ Args:
     p_dropout (float): Dropout probability for regularization.
        
 Helper Methods:
-    _make_pad_mask(src): Generates a padding mask for the encoder's self-attention and decoder's cross-attention.
+    _make_enc_pad_mask(src): Generates a padding mask for the encoder's self-attention
+    _make_dec_pad_mask(src, trg): Generates a padding mask for the decoder's cross-attention.
     _make_pad_future_mask(trg): Generates a combined padding and future mask for the decoder's self-attention.
 """
 class Transformer(nn.Module):
@@ -35,7 +36,7 @@ class Transformer(nn.Module):
 
         # Initialize encoder and decoder
         self.encoder = Encoder(enc_vocab_size, max_len, num_blocks, d_model, d_ffn, num_heads, p_dropout)
-        self.Decoder = Decoder(dec_vocab_size, max_len, num_blocks, d_model, d_ffn, num_heads, p_dropout)
+        self.decoder = Decoder(dec_vocab_size, max_len, num_blocks, d_model, d_ffn, num_heads, p_dropout)
     
     def forward(self, src, trg):
         """
@@ -49,32 +50,30 @@ class Transformer(nn.Module):
                 - dec_cross_attn_pattern (torch.Tensor): Cross-attention patterns from the decoder.
         """
         # Create masking
-        pad_mask = self._make_pad_mask(src) # Used in "self-attention of the encoder / cross-attention of the decoder"
+        enc_pad_mask = self._make_enc_pad_mask(src) # Used in "self-attention of the encoder"
+        dec_pad_mask = self._make_dec_pad_mask(src, trg) # Used in "cross-attention of the decoder"
         pad_future_mask = self._make_pad_future_mask(trg) # Used in "self-attention of the decoder"
         
         # Encoder Pass
-        encoder_out, enc_attn_pattern = self.encoder(src, pad_mask, True)
+        encoder_out, enc_attn_pattern = self.encoder(src, enc_pad_mask, True)
         
         # Decoder Pass
         decoder_out, dec_self_attn_pattern, dec_cross_attn_pattern = self.decoder(trg, 
                                                                                   encoder_out, 
                                                                                   self_attn_mask=pad_future_mask,
-                                                                                  cross_attn_mask=pad_mask, True)
+                                                                                  cross_attn_mask=dec_pad_mask, save_attn_pattern=True)
 
         return decoder_out, dec_self_attn_pattern, dec_cross_attn_pattern
         
 
-    def _make_pad_mask(self, src):
+    def _make_enc_pad_mask(self, src):
         """
-        Creates a padding mask.
+        Creates a padding mask for encoder's self-attention.
         Args:
-            src (torch.Tensor): Source tensor of shape (batch_size, seq_len).
+            src (torch.Tensor): Source tensor of shape (batch_size, src_seq_len).
         Returns:
-            torch.Tensor: Padding mask of shape (batch_size, num_heads, seq_len, seq_len), 
+            torch.Tensor: Padding mask of shape (batch_size, num_heads, src_seq_len, src_seq_len), 
                           where True indicates <PAD> tokens.
-        Note:
-            This padding mask is also used in the decoder as the cross-attention mask,
-            because the key vectors in cross-attention are retrieved from the encoder's output.
         Example:
             Initial pad_mask for a single sequence (sentence): 
             [F F F T T] (F = False, T = True for <PAD>)
@@ -89,9 +88,27 @@ class Transformer(nn.Module):
         
         return pad_mask
 
+    def _make_dec_pad_mask(self, src, trg):
+        """
+        Creates a padding mask for decoder's cross-attention.
+        Args:
+            src (torch.Tensor): Source tensor of shape (batch_size, src_seq_len).
+            trg (torch.Tensor): Target input tensor of shape (batch_size, trg_seq_len).
+        Returns:
+            torch.Tensor: Padding mask of shape (batch_size, num_heads, trg_seq_len, src_seq_len), 
+                          where True indicates <PAD> tokens.
+        Note:
+            Because the key vectors in cross-attention are retrieved from the encoder's output,
+            the pad tokens of encoder's input (i.e. src) will be masked
+        """
+        pad_mask = (src == self.src_pad_idx)          # (batch_size, seq_len)
+        pad_mask = pad_mask.unsqueeze(1).unsqueeze(2) # (batch_size, 1, 1, seq_len)
+        pad_mask = pad_mask.expand(src.shape[0], self.num_heads, trg.shape[1], src.shape[1]) # (batch_size, num_heads, seq_len, seq_len)
+        
+        return pad_mask
     
     def _make_pad_future_mask(self, trg):
-         """
+        """
         Creates a combined padding and future mask for the decoder.
         Args:
             trg (torch.Tensor): Target tensor of shape (batch_size, seq_len).
