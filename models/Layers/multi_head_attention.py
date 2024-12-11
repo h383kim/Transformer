@@ -76,7 +76,7 @@ class MultiHeadAttention(nn.Module):
         '''
         Q, K, V = [
             rearrange(x, 'b s (h d) -> b h s d', h=self.num_heads)
-            for x in (q, k, v)
+            for x in (Q, K, V)
         ]
         
         # Step 3: Apply attention to create attention pattern
