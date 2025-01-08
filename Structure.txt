@@ -1,13 +1,25 @@
 # Transformer
 
-📂 models/
-├── 📂 Embedding/
+📂 config/                    # Configuration files for the model
+├── 📄 default.yaml
+
+📂 data/                      # Data handling and preprocessing
+├── 📄 dataset.py
+
+📂 models/                    # Model components
+├── 📂 Embedding/             # Embedding layers
 │   ├── 📄 positional_encoding.py
 │   └── 📄 embedding.py
-├── 📂 Layers/
+├── 📂 Layers/                # Core layers of the model
 │   ├── 📄 multi_head_attention.py
 │   └── 📄 feed_forward_network.py
-├── 📂 Model/
+├── 📂 Model/                 # Full model implementations
 │   ├── 📄 Encoder.py
 │   ├── 📄 Decoder.py
 │   └── 📄 Transformer.py
+
+📂 trainers/                  # Training-related scripts
+├── 📄 trainer.py
+
+📂 scripts/                   # Miscellaneous scripts (e.g., inference, utilities)
+├── 📄 translate.py
